@@ -35,7 +35,7 @@ namespace Conduit.Infrastructure
         public ICache<Guid, Article> Articles { get; set; }
         public ICache<Guid, Comment> Comments { get; set; }
         public ICache<Guid, Person> Persons { get; set; }
-        public ICache<string, Tag> Tags { get; set; }
+        public ICache<string, byte> Tags { get; set; }
         public ICache<(Guid, string), byte> ArticleTags { get; set; }
         public ICache<(Guid, Guid), byte> ArticleFavorites { get; set; }
         public ICache<(Guid, Guid), byte> FollowedPeople { get; set; }

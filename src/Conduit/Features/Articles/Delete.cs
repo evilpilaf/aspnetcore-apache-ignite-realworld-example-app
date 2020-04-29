@@ -1,11 +1,11 @@
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Apache.Ignite.Linq;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Articles
 {
@@ -38,19 +38,17 @@ namespace Conduit.Features.Articles
                 _context = context;
             }
 
-            public async Task<Unit> Handle(Command message, CancellationToken cancellationToken)
+            public Task<Unit> Handle(Command message, CancellationToken cancellationToken)
             {
-                var article = await _context.Articles
-                    .FirstOrDefaultAsync(x => x.Slug == message.Slug, cancellationToken);
+                var removedCount = _context.Articles.AsCacheQueryable()
+                    .RemoveAll(a => a.Value.Slug == message.Slug);
 
-                if (article == null)
+                if (removedCount == 0)
                 {
                     throw new RestException(HttpStatusCode.NotFound, new { Article = Constants.NOT_FOUND });
                 }
-
-                _context.Articles.Remove(article);
-                await _context.SaveChangesAsync(cancellationToken);
-                return Unit.Value;
+                
+                return Task.FromResult(Unit.Value);
             }
         }
     }

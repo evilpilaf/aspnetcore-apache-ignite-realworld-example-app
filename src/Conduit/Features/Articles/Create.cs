@@ -84,7 +84,7 @@ namespace Conduit.Features.Articles
                 if (tags != null)
                 {
                     await _context.Tags.PutAllAsync(tags.Select(t =>
-                        new KeyValuePair<string, Tag>(t, new Tag {TagId = t})));
+                        new KeyValuePair<string, byte>(t, default)));
 
                     await _context.ArticleTags.PutAllAsync(tags.Select(t =>
                         new KeyValuePair<(Guid, string), byte>((article.ArticleId, t), default)));
