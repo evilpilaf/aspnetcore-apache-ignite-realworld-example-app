@@ -31,13 +31,13 @@ namespace Conduit.IntegrationTests
 
             DbContextOptionsBuilder builder = new DbContextOptionsBuilder();
             builder.UseInMemoryDatabase(DbName);
-            services.AddSingleton(new ConduitContext(builder.Options));
+            services.AddSingleton(new ConduitContext());
 
             startup.ConfigureServices(services);
 
             _provider = services.BuildServiceProvider();
 
-            GetDbContext().Database.EnsureCreated();
+            GetDbContext().EnsureCreated();
             _scopeFactory = _provider.GetService<IServiceScopeFactory>();
         }
 
@@ -101,11 +101,12 @@ namespace Conduit.IntegrationTests
         {
             return ExecuteDbContextAsync(db =>
             {
-                foreach (var entity in entities)
-                {
-                    db.Add(entity);
-                }
-                return db.SaveChangesAsync();
+                throw new NotImplementedException("TODO");
+                // foreach (var entity in entities)
+                // {
+                //     db.Add(entity);
+                // }
+                // return db.SaveChangesAsync();
             });
         }
     }

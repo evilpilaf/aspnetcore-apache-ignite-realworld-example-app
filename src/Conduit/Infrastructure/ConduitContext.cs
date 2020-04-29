@@ -1,17 +1,32 @@
 ﻿using Conduit.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Data;
+using Apache.Ignite.Core;
+using Apache.Ignite.Core.Discovery.Tcp;
+using Apache.Ignite.Core.Discovery.Tcp.Static;
+using Apache.Ignite.Core.Transactions;
 
 namespace Conduit.Infrastructure
 {
-    public class ConduitContext : DbContext
+    public class ConduitContext
     {
-        private IDbContextTransaction _currentTransaction;
+        private ITransaction _currentTransaction;
 
-        public ConduitContext(DbContextOptions options)
-            : base(options)
+        private readonly IIgnite _ignite;
+
+        public ConduitContext()
         {
+            _ignite = Ignition.TryGetIgnite() ?? Ignition.Start(new IgniteConfiguration
+            {
+                // TODO: Move config to startup.
+                Localhost = "127.0.0.1",
+                DiscoverySpi = new TcpDiscoverySpi
+                {
+                    IpFinder = new TcpDiscoveryStaticIpFinder
+                    {
+                        Endpoints = new[] {"127.0.0.1:47500"}
+                    }
+                }
+            });
         }
 
         public DbSet<Article> Articles { get; set; }
@@ -22,7 +37,12 @@ namespace Conduit.Infrastructure
         public DbSet<ArticleFavorite> ArticleFavorites { get; set; }
         public DbSet<FollowedPeople> FollowedPeople { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public void EnsureCreated()
+        {
+            CreateModel(null);
+        }
+
+        private void CreateModel(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ArticleTag>(b =>
             {
@@ -86,10 +106,7 @@ namespace Conduit.Infrastructure
                 return;
             }
 
-            if (!Database.IsInMemory())
-            {
-                _currentTransaction = Database.BeginTransaction(IsolationLevel.ReadCommitted);
-            }
+            _currentTransaction = _ignite.GetTransactions().TxStart();
         }
 
         public void CommitTransaction()

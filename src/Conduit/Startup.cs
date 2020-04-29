@@ -48,22 +48,24 @@ namespace Conduit
                 databaseProvider = DEFAULT_DATABASE_PROVIDER;
             }
 
-            services.AddDbContext<ConduitContext>(options =>
-            {
-                if (databaseProvider.ToLower().Trim().Equals("sqlite"))
-                {
-                    options.UseSqlite(connectionString);
-                }
-                else if (databaseProvider.ToLower().Trim().Equals("sqlserver"))
-                {
-                    // only works in windows container
-                    options.UseSqlServer(connectionString);
-                }
-                else
-                {
-                    throw new Exception("Database provider unknown. Please check configuration");
-                }
-            });
+            // services.AddDbContext<ConduitContext>(options =>
+            // {
+            //     if (databaseProvider.ToLower().Trim().Equals("sqlite"))
+            //     {
+            //         options.UseSqlite(connectionString);
+            //     }
+            //     else if (databaseProvider.ToLower().Trim().Equals("sqlserver"))
+            //     {
+            //         // only works in windows container
+            //         options.UseSqlServer(connectionString);
+            //     }
+            //     else
+            //     {
+            //         throw new Exception("Database provider unknown. Please check configuration");
+            //     }
+            // });
+
+            services.AddScoped<ConduitContext>();
 
             services.AddLocalization(x => x.ResourcesPath = "Resources");
 
@@ -151,7 +153,7 @@ namespace Conduit
                 x.SwaggerEndpoint("/swagger/v1/swagger.json", "RealWorld API V1");
             });
 
-            app.ApplicationServices.GetRequiredService<ConduitContext>().Database.EnsureCreated();
+            app.ApplicationServices.GetRequiredService<ConduitContext>().EnsureCreated();
         }
     }
 }
