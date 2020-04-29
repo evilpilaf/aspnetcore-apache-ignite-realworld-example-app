@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Apache.Ignite.Linq;
 using Conduit.Domain;
 using Conduit.Infrastructure;
 using FluentValidation;
@@ -60,27 +61,15 @@ namespace Conduit.Features.Articles
 
             public async Task<ArticleEnvelope> Handle(Command message, CancellationToken cancellationToken)
             {
-                var author = await _context.Persons.FirstAsync(x => x.Username == _currentUserAccessor.GetCurrentUsername(), cancellationToken);
-                var tags = new List<Tag>();
-                foreach (var tag in (message.Article.TagList ?? Enumerable.Empty<string>()))
+                var authorId = await _context.Persons.AsCacheQueryable()
+                    .Where(x => x.Value.Username == _currentUserAccessor.GetCurrentUsername())
+                    .Select(x => x.Key)
+                    .FirstAsync(cancellationToken);
+                
+                var article = new Article
                 {
-                    var t = await _context.Tags.FindAsync(tag);
-                    if (t == null)
-                    {
-                        t = new Tag()
-                        {
-                            TagId = tag
-                        };
-                        await _context.Tags.AddAsync(t, cancellationToken);
-                        //save immediately for reuse
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
-                    tags.Add(t);
-                }
-
-                var article = new Article()
-                {
-                    Author = author,
+                    ArticleId = Guid.NewGuid(),
+                    AuthorId = authorId,
                     Body = message.Article.Body,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
@@ -88,15 +77,18 @@ namespace Conduit.Features.Articles
                     Title = message.Article.Title,
                     Slug = message.Article.Title.GenerateSlug()
                 };
-                await _context.Articles.AddAsync(article, cancellationToken);
+                
+                await _context.Articles.PutAsync(article.ArticleId, article);
 
-                await _context.ArticleTags.AddRangeAsync(tags.Select(x => new ArticleTag()
+                var tags = message.Article.TagList;
+                if (tags != null)
                 {
-                    Article = article,
-                    Tag = x
-                }), cancellationToken);
+                    await _context.Tags.PutAllAsync(tags.Select(t =>
+                        new KeyValuePair<string, Tag>(t, new Tag {TagId = t})));
 
-                await _context.SaveChangesAsync(cancellationToken);
+                    await _context.ArticleTags.PutAllAsync(tags.Select(t =>
+                        new KeyValuePair<(Guid, string), byte>((article.ArticleId, t), default)));
+                }
 
                 return new ArticleEnvelope(article);
             }
