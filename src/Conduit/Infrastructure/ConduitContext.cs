@@ -1,6 +1,8 @@
-﻿using Conduit.Domain;
+﻿using System.Collections.Generic;
+using Conduit.Domain;
 using Microsoft.EntityFrameworkCore;
 using Apache.Ignite.Core;
+using Apache.Ignite.Core.Cache;
 using Apache.Ignite.Core.Discovery.Tcp;
 using Apache.Ignite.Core.Discovery.Tcp.Static;
 using Apache.Ignite.Core.Transactions;
@@ -29,13 +31,13 @@ namespace Conduit.Infrastructure
             });
         }
 
-        public DbSet<Article> Articles { get; set; }
-        public DbSet<Comment> Comments { get; set; }
-        public DbSet<Person> Persons { get; set; }
-        public DbSet<Tag> Tags { get; set; }
-        public DbSet<ArticleTag> ArticleTags { get; set; }
-        public DbSet<ArticleFavorite> ArticleFavorites { get; set; }
-        public DbSet<FollowedPeople> FollowedPeople { get; set; }
+        public ICache<int, Article> Articles { get; set; }
+        public ICache<int, Comment> Comments { get; set; }
+        public ICache<int, Person> Persons { get; set; }
+        public ICache<string, Tag> Tags { get; set; }
+        public ICache<(int, string), ArticleTag> ArticleTags { get; set; }
+        public ICache<(int, int), ArticleFavorite> ArticleFavorites { get; set; }
+        public ICache<(int, int), FollowedPeople> FollowedPeople { get; set; }
 
         public void EnsureCreated()
         {

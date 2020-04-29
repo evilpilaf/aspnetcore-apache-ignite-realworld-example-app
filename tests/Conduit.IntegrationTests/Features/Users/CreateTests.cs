@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Apache.Ignite.Linq;
 using Conduit.Features.Users;
 using Conduit.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -24,10 +25,10 @@ namespace Conduit.IntegrationTests.Features.Users
 
             await SendAsync(command);
 
-            var created = await ExecuteDbContextAsync(db => db.Persons.Where(d => d.Email == command.User.Email).SingleOrDefaultAsync());
+            var created = await ExecuteDbContextAsync(db => db.Persons.AsCacheQueryable().Where(d => d.Value.Email == command.User.Email).SingleOrDefaultAsync());
 
             Assert.NotNull(created);
-            Assert.Equal(created.Hash, new PasswordHasher().Hash("password", created.Salt));
+            Assert.Equal(created.Value.Hash, new PasswordHasher().Hash("password", created.Value.Salt));
         }
     }
 }

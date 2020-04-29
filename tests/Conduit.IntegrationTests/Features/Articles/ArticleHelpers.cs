@@ -25,8 +25,7 @@ namespace Conduit.IntegrationTests.Features.Articles
             var articleCreateHandler = new Create.Handler(dbContext, currentAccessor);
             var created = await articleCreateHandler.Handle(command, new System.Threading.CancellationToken());
 
-            var dbArticle = await fixture.ExecuteDbContextAsync(db => db.Articles.Where(a => a.ArticleId == created.Article.ArticleId)
-                .SingleOrDefaultAsync());
+            var dbArticle = await fixture.ExecuteDbContextAsync(db => db.Articles.GetAsync(created.Article.ArticleId));
 
             return dbArticle;
         }

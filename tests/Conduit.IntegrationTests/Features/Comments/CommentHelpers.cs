@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Apache.Ignite.Linq;
 using Microsoft.EntityFrameworkCore;
 using Conduit.Features.Comments;
 using Conduit.IntegrationTests.Features.Users;
@@ -32,14 +33,13 @@ namespace Conduit.IntegrationTests.Features.Comments
 
             var dbArticleWithComments = await fixture.ExecuteDbContextAsync(
                 db => db.Articles
-                    .Include(a => a.Comments).Include(a => a.Author)
-                    .Where(a => a.Slug == command.Slug)
+                    .AsCacheQueryable()
+                    .Where(a => a.Value.Slug == command.Slug)
                     .SingleOrDefaultAsync()
             );
 
-            var dbComment = dbArticleWithComments.Comments
-                .Where(c => c.ArticleId == dbArticleWithComments.ArticleId && c.Author == dbArticleWithComments.Author)
-                .FirstOrDefault();
+            var dbComment = dbArticleWithComments.Value.Comments
+                .FirstOrDefault(c => c.ArticleId == dbArticleWithComments.Value.ArticleId && c.Author == dbArticleWithComments.Value.Author);
 
             return dbComment;
         }
